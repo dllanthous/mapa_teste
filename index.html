@@ -81,51 +81,27 @@
         zoom: 3.5
     });
 
-    var geocoder = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        countries: 'br',
-        marker: {
-            color: 'orange'
-        },
-        mapboxgl: mapboxgl
-    });
 
-    var marker = (new mapboxgl.Marker({color: "orange"})).setLngLat([0, 0]).addTo(map);
-    var entrou = 0;
-    map.on('render', function () {
-        if (geocoder.mapMarker != null) {
-            if (entrou == 0) {
-                marker.remove();
-                entrou = 1;
-                marker = geocoder.mapMarker;
-            }
-        }
-    });
+    var marker = (new mapboxgl.Marker({color: "orange", draggable: true})).setLngLat([0, 0]).addTo(map);
     map.on('click', function (e) {
-        if (marker != null) {
-            console.log('pse');
-            marker._lngLat.lng = e.lngLat.lng;
-            marker._lngLat.lat = e.lngLat.lat;
-        }
-        if (marker == null) {
-            marker.lngLat.lng = e.lngLat.lng;
-            marker.lngLat.lat = e.lngLat.lat;
-        }
-        map.flyTo({center: [e.lngLat.lng, e.lngLat.lat]});
+
+        console.log('pse');
+        marker._lngLat.lng = e.lngLat.lng;
+        marker._lngLat.lat = e.lngLat.lat;
+        map.flyTo({zoom: (map.getZoom()>13)?map.getZoom():13, center: [e.lngLat.lng, e.lngLat.lat]});
+
         coord();
     });
-
-    map.addControl(geocoder);
+    marker.on('dragend', coord);
 
     function exibir(posicao) {
         marker._lngLat.lng = posicao.coords.longitude;
         marker._lngLat.lat = posicao.coords.latitude;
-        map.setZoom(9);
-        map.flyTo({center: [posicao.coords.longitude, posicao.coords.latitude]});
+        map.flyTo({zoom: (map.getZoom()>13)?map.getZoom():13, center: [posicao.coords.longitude, posicao.coords.latitude]});
         coord();
     }
 
-    navigator.geolocation.getCurrentPosition(exibir);
+    //navigator.geolocation.getCurrentPosition(exibir);
 
     function coord() {
         var lngLat = marker.getLngLat();
@@ -175,25 +151,60 @@
             type: 'GET',
             url: 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + rua.value + ' ' + cidade.value + '.json?access_token=pk.eyJ1IjoiZG9taWxsYW4iLCJhIjoiY2s4eWh2MTJqMDVtbTNmbnJ5bjQ0MGxzdiJ9.KFHPTxePgQkV6uEpi0oToA',
             success: function (data) {
-                if (data.features[0] == undefined) alert("Localização não encontrada. Marque diretamente no mapa.");
+                if (data.features[0] == undefined) loc2();
                 if (data.features[0].relevance > 0.9) {
                     marker.setLngLat(data.features[0].geometry.coordinates);
-                    map.flyTo({center: data.features[0].geometry.coordinates});
+                    map.flyTo({zoom: (map.getZoom()>13)?map.getZoom():13, center: data.features[0].geometry.coordinates});
                 } else {
-                    alert("Localização não encontrada. Marque diretamente no mapa.");
+                    loc2();
                 }
             },
             error: function (data) {
-                alert("Localização não encontrada. Marque diretamente no mapa.");
+                loc2();
             },
             complete: function () {
 
             }
         });
+    }
+    function loc2() {
 
+        console.log("fadiasdnmaf");
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(exibir, loc3);
+        } else {
+            console.log("fadiasdnmaf");
+            loc3();
+        }
+    }
+    function loc3() {
+
+        loc4();
+        //busca de cep php
 
     }
+    function loc4() {
+        console.log("fadiasdnmaf");
+        $.ajax({
+            type: 'GET',
+            url: 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + bairro.value + ' ' + cidade.value + '.json?access_token=pk.eyJ1IjoiZG9taWxsYW4iLCJhIjoiY2s4eWh2MTJqMDVtbTNmbnJ5bjQ0MGxzdiJ9.KFHPTxePgQkV6uEpi0oToA',
+            success: function (data) {
+                if (data.features[0] == undefined) alert("aaaaaaaaa");
+                if (data.features[0].relevance > 0.9) {
+                    marker.setLngLat(data.features[0].geometry.coordinates);
+                    map.flyTo({zoom: (map.getZoom()>13)?map.getZoom():13, center: data.features[0].geometry.coordinates});
+                } else {
+                    alert("aaaaaaaaa");
+                }
+            },
+            error: function (data) {
+                alert("aaaaaaaaa");
+            },
+            complete: function () {
 
+            }
+        });
+    }
     $(document).ready(function () {
 
         function limpa_formulário_cep() {
